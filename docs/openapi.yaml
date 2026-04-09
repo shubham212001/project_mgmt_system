@@ -1,0 +1,271 @@
+openapi: 3.0.3
+info:
+  title: Project Management Platform API
+  version: 1.0.0
+  description: Jira-like backend APIs (issues, sprints, workflow, comments, realtime).
+servers:
+  - url: http://localhost:8080
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+  /api/projects/{projectId}/issues:
+    post:
+      summary: Create issue
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, title]
+              properties:
+                type: { type: string, example: story }
+                title: { type: string, example: Add OAuth login }
+                description: { type: string }
+                priority: { type: integer, example: 2 }
+                story_points: { type: integer, example: 5 }
+                assignee_id: { type: string }
+                reporter_id: { type: string }
+                labels:
+                  type: array
+                  items: { type: string }
+                custom_fields:
+                  type: object
+      responses:
+        "201":
+          description: Created
+  /api/projects/{projectId}/board:
+    get:
+      summary: Get board state
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Board columns with issues
+  /api/issues/{issueId}:
+    patch:
+      summary: Update issue fields with optimistic locking
+      parameters:
+        - in: path
+          name: issueId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version]
+              properties:
+                version: { type: integer, example: 1 }
+                title: { type: string }
+                description: { type: string }
+                priority: { type: integer }
+                assignee_id: { type: string }
+                story_points: { type: integer }
+                sprint_id: { type: string }
+                labels:
+                  type: array
+                  items: { type: string }
+                custom_fields:
+                  type: object
+      responses:
+        "200": { description: Updated }
+        "409": { description: Version conflict }
+  /api/issues/{issueId}/transitions:
+    post:
+      summary: Transition issue status
+      parameters:
+        - in: path
+          name: issueId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to_status]
+              properties:
+                to_status: { type: string, example: In Review }
+                actor_id: { type: string }
+      responses:
+        "200": { description: Transitioned }
+        "422": { description: Invalid transition / validation failed }
+  /api/projects/{projectId}/sprints:
+    get:
+      summary: List sprints
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Sprint list }
+    post:
+      summary: Create sprint
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, start_date, end_date]
+              properties:
+                name: { type: string }
+                start_date: { type: string, example: "2026-04-01" }
+                end_date: { type: string, example: "2026-04-14" }
+      responses:
+        "201": { description: Created }
+  /api/sprints/{sprintId}/start:
+    post:
+      summary: Start sprint
+      parameters:
+        - in: path
+          name: sprintId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Sprint active }
+  /api/sprints/{sprintId}/complete:
+    post:
+      summary: Complete sprint with optional carry-over
+      parameters:
+        - in: path
+          name: sprintId
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_sprint_id: { type: string }
+                carry_over_issue_ids:
+                  type: array
+                  items: { type: string }
+      responses:
+        "200": { description: Sprint completed }
+  /api/issues/{issueId}/comments:
+    get:
+      summary: List issue comments
+      parameters:
+        - in: path
+          name: issueId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Comments list }
+    post:
+      summary: Add threaded comment
+      parameters:
+        - in: path
+          name: issueId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, content]
+              properties:
+                user_id: { type: string }
+                parent_id: { type: string }
+                content: { type: string, example: "Looks good @jane" }
+      responses:
+        "201": { description: Created }
+  /api/projects/{projectId}/activity:
+    get:
+      summary: Activity feed
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: cursor
+          schema: { type: string }
+      responses:
+        "200": { description: Paginated activity events }
+  /api/search:
+    get:
+      summary: Search issues and comments
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: assignee
+          schema: { type: string }
+        - in: query
+          name: priority_min
+          schema: { type: integer }
+        - in: query
+          name: cursor
+          schema: { type: string }
+      responses:
+        "200": { description: Search results }
+  /api/notifications:
+    get:
+      summary: List user notifications
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Notifications list }
+  /api/notifications/{id}/read:
+    post:
+      summary: Mark notification as read
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Marked read }
+  /ws/projects/{projectId}:
+    get:
+      summary: WebSocket realtime stream
+      description: "Connect using ws://localhost:8080/ws/projects/{projectId}?user_id=...&since=..."
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: user_id
+          schema: { type: string }
+        - in: query
+          name: since
+          schema: { type: integer }
+      responses:
+        "101":
+          description: Switching Protocols

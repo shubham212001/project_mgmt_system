@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pm_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pm_platform?sslmode=disable
+      REDIS_ADDR: redis:6379
+      REDIS_DB: 0
+      WS_PING_INTERVAL: 20s
+      WS_PONG_WAIT: 45s
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
