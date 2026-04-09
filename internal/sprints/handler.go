@@ -1,20 +1,26 @@
 package sprints
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"project-management-platform/internal/realtime"
 )
 
 type Handler struct {
-	db *pgxpool.Pool
+	db  *pgxpool.Pool
+	hub *realtime.Hub
 }
 
-func NewHandler(db *pgxpool.Pool) *Handler {
-	return &Handler{db: db}
+func NewHandler(db *pgxpool.Pool, hub *realtime.Hub) *Handler {
+	return &Handler{db: db, hub: hub}
 }
 
 type createSprintRequest struct {
@@ -44,6 +50,7 @@ func (h *Handler) Create(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
+	_ = h.hub.Publish(c, projectID, "sprint_updated", gin.H{"action": "created", "sprint_id": id, "project_id": projectID})
 	c.JSON(http.StatusCreated, gin.H{"sprint_id": id, "status": "planned"})
 }
 
@@ -73,6 +80,11 @@ func (h *Handler) Update(c *gin.Context) {
 			return
 		}
 	}
+	var projectID string
+	if err := h.db.QueryRow(c, `SELECT project_id FROM sprints WHERE id=$1`, id).Scan(&projectID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "sprint not found"})
+		return
+	}
 	tag, err := h.db.Exec(c, `
 		UPDATE sprints
 		SET name=COALESCE($1,name),
@@ -89,6 +101,7 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "sprint not found"})
 		return
 	}
+	_ = h.hub.Publish(c, projectID, "sprint_updated", gin.H{"action": "updated", "sprint_id": id, "project_id": projectID})
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }
 
@@ -100,7 +113,12 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 	defer tx.Rollback(c)
-	_, _ = tx.Exec(c, `UPDATE issues SET sprint_id=NULL WHERE sprint_id=$1`, id)
+	var projectID string
+	if err := tx.QueryRow(c, `SELECT project_id FROM sprints WHERE id=$1`, id).Scan(&projectID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "sprint not found"})
+		return
+	}
+	_, _ = tx.Exec(c, `UPDATE issues SET sprint_id=NULL, updated_at=NOW(), version=version+1 WHERE sprint_id=$1`, id)
 	tag, err := tx.Exec(c, `DELETE FROM sprints WHERE id=$1`, id)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
@@ -114,6 +132,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "commit failed"})
 		return
 	}
+	_ = h.hub.Publish(c, projectID, "sprint_updated", gin.H{"action": "deleted", "sprint_id": id, "project_id": projectID})
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
 
@@ -136,6 +155,15 @@ func (h *Handler) MoveIssue(c *gin.Context) {
 	if tag.RowsAffected() == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "issue not found"})
 		return
+	}
+	var projectID string
+	if err := h.db.QueryRow(c, `SELECT project_id FROM issues WHERE id=$1`, req.IssueID).Scan(&projectID); err == nil {
+		sprintID := any(nil)
+		if req.SprintID != nil {
+			sprintID = *req.SprintID
+		}
+		h.logActivity(c, projectID, req.IssueID, nil, "issue_sprint_moved", gin.H{"to_sprint_id": sprintID})
+		_ = h.hub.Publish(c, projectID, "sprint_updated", gin.H{"action": "issue_moved", "issue_id": req.IssueID, "sprint_id": sprintID})
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "moved"})
 }
@@ -163,11 +191,17 @@ func (h *Handler) List(c *gin.Context) {
 
 func (h *Handler) Start(c *gin.Context) {
 	id := c.Param("id")
+	var projectID string
+	if err := h.db.QueryRow(c, `SELECT project_id FROM sprints WHERE id=$1`, id).Scan(&projectID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "sprint not found"})
+		return
+	}
 	_, err := h.db.Exec(c, `UPDATE sprints SET status='active' WHERE id=$1`, id)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
+	_ = h.hub.Publish(c, projectID, "sprint_updated", gin.H{"action": "started", "sprint_id": id, "project_id": projectID})
 	c.JSON(http.StatusOK, gin.H{"status": "active"})
 }
 
@@ -187,6 +221,11 @@ func (h *Handler) Complete(c *gin.Context) {
 		return
 	}
 	defer tx.Rollback(c)
+	var projectID string
+	if err := tx.QueryRow(c, `SELECT project_id FROM sprints WHERE id=$1`, id).Scan(&projectID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "sprint not found"})
+		return
+	}
 
 	_, err = tx.Exec(c, `UPDATE sprints SET status='completed' WHERE id=$1`, id)
 	if err != nil {
@@ -194,10 +233,13 @@ func (h *Handler) Complete(c *gin.Context) {
 		return
 	}
 	if req.NewSprintID != nil && len(req.CarryOverIDs) > 0 {
-		_, err = tx.Exec(c, `UPDATE issues SET sprint_id=$1 WHERE id=ANY($2::uuid[])`, *req.NewSprintID, req.CarryOverIDs)
+		_, err = tx.Exec(c, `UPDATE issues SET sprint_id=$1, updated_at=NOW(), version=version+1 WHERE id=ANY($2::uuid[])`, *req.NewSprintID, req.CarryOverIDs)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "carry-over update failed"})
 			return
+		}
+		for _, carried := range req.CarryOverIDs {
+			h.logActivityTx(c, tx, projectID, carried, nil, "issue_carry_over", gin.H{"from_sprint_id": id, "to_sprint_id": *req.NewSprintID})
 		}
 	}
 
@@ -226,5 +268,28 @@ func (h *Handler) Complete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "commit failed"})
 		return
 	}
+	_ = h.hub.Publish(c, projectID, "sprint_updated", gin.H{
+		"action":                    "completed",
+		"sprint_id":                 id,
+		"project_id":                projectID,
+		"velocity_completed_points": completedPoints,
+		"incomplete_count":          len(incomplete),
+	})
 	c.JSON(http.StatusOK, gin.H{"status": "completed", "velocity_completed_points": completedPoints, "incomplete_items": incomplete})
+}
+
+func (h *Handler) logActivity(ctx context.Context, projectID, issueID string, actorID *string, eventType string, payload any) {
+	b, _ := json.Marshal(payload)
+	_, _ = h.db.Exec(ctx, `
+		INSERT INTO activity_log(project_id, issue_id, actor_id, event_type, payload)
+		VALUES($1,$2,$3,$4,$5::jsonb)
+	`, projectID, issueID, actorID, eventType, string(b))
+}
+
+func (h *Handler) logActivityTx(ctx context.Context, tx pgx.Tx, projectID, issueID string, actorID *string, eventType string, payload any) {
+	b, _ := json.Marshal(payload)
+	_, _ = tx.Exec(ctx, `
+		INSERT INTO activity_log(project_id, issue_id, actor_id, event_type, payload)
+		VALUES($1,$2,$3,$4,$5::jsonb)
+	`, projectID, issueID, actorID, eventType, string(b))
 }

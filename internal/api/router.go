@@ -26,7 +26,7 @@ func NewRouter(db *pgxpool.Pool, hub *realtime.Hub) *gin.Engine {
 
 	issueH := issues.NewHandler(db, hub)
 	projectH := projects.NewHandler(db)
-	sprintH := sprints.NewHandler(db)
+	sprintH := sprints.NewHandler(db, hub)
 	searchH := search.NewHandler(db)
 	notificationH := notifications.NewHandler(db)
 
@@ -45,6 +45,8 @@ func NewRouter(db *pgxpool.Pool, hub *realtime.Hub) *gin.Engine {
 		api.POST("/sprints/issues/move", sprintH.MoveIssue)
 		api.GET("/issues/:id/comments", issueH.ListComments)
 		api.POST("/issues/:id/comments", issueH.AddComment)
+		api.PATCH("/issues/:id/comments/:commentID", issueH.UpdateComment)
+		api.DELETE("/issues/:id/comments/:commentID", issueH.DeleteComment)
 		api.GET("/projects/:id/activity", projectH.Activity)
 		api.GET("/search", searchH.Search)
 		api.POST("/issues/:id/watch", issueH.Watch)

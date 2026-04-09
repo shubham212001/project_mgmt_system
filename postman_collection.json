@@ -19,6 +19,10 @@
       "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
     },
     {
+      "key": "commentId",
+      "value": "abababab-abab-abab-abab-abababababab"
+    },
+    {
       "key": "sprintId",
       "value": "cccccccc-cccc-cccc-cccc-cccccccccccc"
     },
@@ -227,6 +231,64 @@
           }
         },
         {
+          "name": "Update Comment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"content\": \"Edited comment content\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/issues/{{issueId}}/comments/{{commentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "issues",
+                "{{issueId}}",
+                "comments",
+                "{{commentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/issues/{{issueId}}/comments/{{commentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "issues",
+                "{{issueId}}",
+                "comments",
+                "{{commentId}}"
+              ]
+            }
+          }
+        },
+        {
           "name": "Watch Issue",
           "request": {
             "method": "POST",
@@ -306,7 +368,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/projects/{{projectId}}/activity?cursor={{activityCursor}}",
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/activity?cursor={{activityCursor}}&event_type=issue_updated&actor_id={{userId}}&issue_id={{issueId}}&limit=50",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -320,6 +382,22 @@
                 {
                   "key": "cursor",
                   "value": "{{activityCursor}}"
+                },
+                {
+                  "key": "event_type",
+                  "value": "issue_updated"
+                },
+                {
+                  "key": "actor_id",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "issue_id",
+                  "value": "{{issueId}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
                 }
               ]
             }

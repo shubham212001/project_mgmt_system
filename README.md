@@ -16,6 +16,15 @@ Production-focused modular monolith backend for project management with:
 - **Data layer**: PostgreSQL (source of truth), Redis (pub/sub + replay buffer)
 - **Concurrency strategy**: optimistic locking via `issues.version`
 
+### Why this architecture
+
+- **Modular monolith first**: faster delivery for an SDE-1 scope while keeping domain boundaries clean for future extraction.
+- **PostgreSQL as source of truth**: relational integrity is critical for workflows, parent-child issue links, and auditable history.
+- **Redis for realtime fan-out**: decouples HTTP mutation path from websocket subscribers and enables replay on reconnect.
+- **Optimistic locking on issues**: low coordination overhead and explicit conflict handling for concurrent edits.
+- **Cursor-based pagination**: stable ordering under write load for activity/search feeds.
+- **Schema + app validation split**: DB constraints enforce invariants, handlers provide user-friendly errors and guardrails.
+
 ## Stack
 
 - Go 1.22
@@ -229,6 +238,41 @@ Add a comment. Mentions like `@jane` create notifications.
 
 ---
 
+### `PATCH /api/issues/:id/comments/:commentID`
+Update comment content (author only).
+
+**Body**
+```json
+{
+  "user_id": "7e5f9e7e-5e5f-4c6e-b65a-3ab0b2f8f9f1",
+  "content": "Edited comment content"
+}
+```
+
+**Success 200**
+```json
+{"status": "updated"}
+```
+
+---
+
+### `DELETE /api/issues/:id/comments/:commentID`
+Delete comment (author only).
+
+**Body**
+```json
+{
+  "user_id": "7e5f9e7e-5e5f-4c6e-b65a-3ab0b2f8f9f1"
+}
+```
+
+**Success 200**
+```json
+{"status": "deleted"}
+```
+
+---
+
 ### `POST /api/issues/:id/watch?user_id=<uuid>`
 Watch an issue.
 
@@ -280,13 +324,17 @@ Get board columns with issues grouped by status.
 ---
 
 ### `GET /api/projects/:id/activity?cursor=<id>`
-Get project activity feed (cursor pagination).
+Get project activity feed (cursor pagination + filters).
 
 **Path params**
 - `id` (UUID): project ID
 
 **Query params**
 - `cursor` (optional, activity row ID)
+- `event_type` (optional, exact event type; case-insensitive)
+- `actor_id` (optional UUID)
+- `issue_id` (optional UUID)
+- `limit` (optional integer, `1..200`, default `50`)
 
 **Success 200**
 ```json
@@ -520,7 +568,44 @@ Emitted events include:
 - `issue_updated`
 - `issue_moved`
 - `comment_added`
+- `comment_updated`
+- `comment_deleted`
+- `sprint_updated`
 - `presence`
+
+## Scenario Demo Script (5-10 min walkthrough)
+
+1. **Setup and docs**
+   - Run `docker compose up --build`
+   - Open `/swagger` and show schema + endpoints quickly.
+2. **Scenario 1: concurrent updates**
+   - Create one issue.
+   - Open two tabs (or two Postman requests) with same `version`.
+   - Send update A (assignee) and update B (priority) concurrently.
+   - Show one succeeds and one gets `409`; retry loser with latest version; final state has both changes.
+   - Show `issue_updated` websocket events.
+3. **Scenario 2: sprint completion carry-over**
+   - Create/start sprint, add a few issues, transition some to done.
+   - Complete sprint with `carry_over_issue_ids`.
+   - Show `velocity_completed_points`, `incomplete_items`, and `issue_carry_over` activity entries.
+   - Show `sprint_updated` websocket event.
+4. **Scenario 3: workflow violation**
+   - Attempt `To Do -> Done` transition directly.
+   - Show `422` and `allowed_transitions`.
+5. **Collaboration and notifications**
+   - Add comment with `@mention`, then edit/delete comment.
+   - Show notifications endpoint (`mention`, `assignment_changed`, `status_changed`).
+6. **Search and filters**
+   - Run `/api/search` with structured filters.
+   - Run `/api/projects/:id/activity` with `event_type`, `actor_id`, and cursor pagination.
+
+## Design Trade-offs
+
+- **Chose consistency over extreme write throughput**: transactional updates and audit logging favor correctness.
+- **Chose simple event payloads**: lightweight websocket messages reduce coupling; clients re-fetch details when needed.
+- **Chose server-side validation for UUID/date/custom fields**: clearer API errors and fewer DB-level surprises.
+- **Deferred auth/authorization**: kept scope focused on workflow/collaboration engine for assignment objectives.
+- **Kept replay buffer in Redis list**: easy reconnection support with bounded memory; long-term event storage remains in DB activity log.
 
 ## Common Error Shape
 

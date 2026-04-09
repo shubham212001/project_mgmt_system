@@ -91,6 +91,13 @@ func (h *Handler) Create(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
+	if req.AssigneeID != nil && *req.AssigneeID != "" {
+		h.createNotification(c, *req.AssigneeID, projectID, &issueID, "assignment_changed", gin.H{
+			"issue_id":  issueID,
+			"issue_key": issueKey,
+			"reason":    "assigned_on_create",
+		})
+	}
 	h.logActivity(c, projectID, issueID, req.ReporterID, "issue_created", gin.H{"title": req.Title})
 	_ = h.hub.Publish(c, projectID, "issue_created", gin.H{"issue_id": issueID, "issue_key": issueKey})
 	c.JSON(http.StatusCreated, gin.H{"issue_id": issueID, "issue_key": issueKey})
@@ -135,8 +142,9 @@ func (h *Handler) Patch(c *gin.Context) {
 	}
 	defer tx.Rollback(c)
 
-	var projectID, oldStatus string
-	if err := tx.QueryRow(c, `SELECT project_id, status_id FROM issues WHERE id=$1`, issueID).Scan(&projectID, &oldStatus); err != nil {
+	var projectID string
+	var oldAssigneeID *string
+	if err := tx.QueryRow(c, `SELECT project_id, assignee_id FROM issues WHERE id=$1`, issueID).Scan(&projectID, &oldAssigneeID); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "issue not found"})
 		return
 	}
@@ -171,6 +179,20 @@ func (h *Handler) Patch(c *gin.Context) {
 	if tag.RowsAffected() == 0 {
 		c.JSON(http.StatusConflict, gin.H{"error": "conflict detected, refresh and retry"})
 		return
+	}
+	var newAssigneeID *string
+	_ = tx.QueryRow(c, `SELECT assignee_id FROM issues WHERE id=$1`, issueID).Scan(&newAssigneeID)
+	if newAssigneeID != nil && *newAssigneeID != "" {
+		old := ""
+		if oldAssigneeID != nil {
+			old = *oldAssigneeID
+		}
+		if old != *newAssigneeID {
+			h.createNotificationTx(c, tx, *newAssigneeID, projectID, &issueID, "assignment_changed", gin.H{
+				"issue_id": issueID,
+				"reason":   "assignee_updated",
+			})
+		}
 	}
 	h.logActivityTx(c, tx, projectID, issueID, req.ActorID, "issue_updated", gin.H{"version": req.Version + 1})
 	if err := tx.Commit(c); err != nil {
@@ -241,7 +263,16 @@ func (h *Handler) Transition(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
+	var assigneeID *string
+	_ = tx.QueryRow(c, `SELECT assignee_id FROM issues WHERE id=$1`, issueID).Scan(&assigneeID)
 	h.logActivityTx(c, tx, projectID, issueID, req.ActorID, "issue_transitioned", gin.H{"from": currentStatus, "to": req.ToStatus})
+	if assigneeID != nil && *assigneeID != "" {
+		h.createNotificationTx(c, tx, *assigneeID, projectID, &issueID, "status_changed", gin.H{
+			"issue_id": issueID,
+			"from":     currentStatus,
+			"to":       req.ToStatus,
+		})
+	}
 	if strings.EqualFold(req.ToStatus, "In Review") {
 		_, _ = tx.Exec(c, `
 			INSERT INTO notifications(user_id, project_id, issue_id, type, payload)
@@ -335,6 +366,64 @@ func (h *Handler) AddComment(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"comment_id": commentID})
 }
 
+type updateCommentRequest struct {
+	UserID  string `json:"user_id"`
+	Content string `json:"content"`
+}
+
+func (h *Handler) UpdateComment(c *gin.Context) {
+	issueID := c.Param("id")
+	commentID := c.Param("commentID")
+	var req updateCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.UserID == "" || strings.TrimSpace(req.Content) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		return
+	}
+	tag, err := h.db.Exec(c, `UPDATE comments SET content=$1 WHERE id=$2 AND issue_id=$3 AND user_id=$4`, req.Content, commentID, issueID, req.UserID)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "comment not found"})
+		return
+	}
+	var projectID string
+	_ = h.db.QueryRow(c, `SELECT project_id FROM issues WHERE id=$1`, issueID).Scan(&projectID)
+	h.logActivity(c, projectID, issueID, &req.UserID, "comment_updated", gin.H{"comment_id": commentID})
+	h.createMentionNotifications(c, projectID, issueID, req.Content)
+	_ = h.hub.Publish(c, projectID, "comment_updated", gin.H{"issue_id": issueID, "comment_id": commentID})
+	c.JSON(http.StatusOK, gin.H{"status": "updated"})
+}
+
+type deleteCommentRequest struct {
+	UserID string `json:"user_id"`
+}
+
+func (h *Handler) DeleteComment(c *gin.Context) {
+	issueID := c.Param("id")
+	commentID := c.Param("commentID")
+	var req deleteCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.UserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		return
+	}
+	tag, err := h.db.Exec(c, `DELETE FROM comments WHERE id=$1 AND issue_id=$2 AND user_id=$3`, commentID, issueID, req.UserID)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "comment not found"})
+		return
+	}
+	var projectID string
+	_ = h.db.QueryRow(c, `SELECT project_id FROM issues WHERE id=$1`, issueID).Scan(&projectID)
+	h.logActivity(c, projectID, issueID, &req.UserID, "comment_deleted", gin.H{"comment_id": commentID})
+	_ = h.hub.Publish(c, projectID, "comment_deleted", gin.H{"issue_id": issueID, "comment_id": commentID})
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
 func (h *Handler) Watch(c *gin.Context) {
 	issueID := c.Param("id")
 	userID := c.Query("user_id")
@@ -347,6 +436,10 @@ func (h *Handler) Watch(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
+	var projectID string
+	if err := h.db.QueryRow(c, `SELECT project_id FROM issues WHERE id=$1`, issueID).Scan(&projectID); err == nil {
+		h.logActivity(c, projectID, issueID, &userID, "issue_watched", gin.H{"watcher_id": userID})
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "watching"})
 }
 
@@ -358,6 +451,10 @@ func (h *Handler) Unwatch(c *gin.Context) {
 		return
 	}
 	_, _ = h.db.Exec(c, `DELETE FROM issue_watchers WHERE issue_id=$1 AND user_id=$2`, issueID, userID)
+	var projectID string
+	if err := h.db.QueryRow(c, `SELECT project_id FROM issues WHERE id=$1`, issueID).Scan(&projectID); err == nil {
+		h.logActivity(c, projectID, issueID, &userID, "issue_unwatched", gin.H{"watcher_id": userID})
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "unwatched"})
 }
 
@@ -373,6 +470,22 @@ func (h *Handler) createMentionNotifications(ctx context.Context, projectID, iss
 			FROM users WHERE lower(split_part(email,'@',1))=lower($3)
 		`, projectID, issueID, m)
 	}
+}
+
+func (h *Handler) createNotification(ctx context.Context, userID, projectID string, issueID *string, typ string, payload any) {
+	b, _ := json.Marshal(payload)
+	_, _ = h.db.Exec(ctx, `
+		INSERT INTO notifications(user_id, project_id, issue_id, type, payload)
+		VALUES($1,$2,$3,$4,$5::jsonb)
+	`, userID, projectID, issueID, typ, string(b))
+}
+
+func (h *Handler) createNotificationTx(ctx context.Context, tx pgx.Tx, userID, projectID string, issueID *string, typ string, payload any) {
+	b, _ := json.Marshal(payload)
+	_, _ = tx.Exec(ctx, `
+		INSERT INTO notifications(user_id, project_id, issue_id, type, payload)
+		VALUES($1,$2,$3,$4,$5::jsonb)
+	`, userID, projectID, issueID, typ, string(b))
 }
 
 var mentionRe = regexp.MustCompile(`@([a-zA-Z0-9_\-\.]+)`)

@@ -3,6 +3,8 @@ package projects
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -50,38 +52,64 @@ func (h *Handler) Board(c *gin.Context) {
 func (h *Handler) Activity(c *gin.Context) {
 	projectID := c.Param("id")
 	limit := 50
+	if raw := c.Query("limit"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n <= 0 || n > 200 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 200"})
+			return
+		}
+		limit = n
+	}
 	cursor := c.Query("cursor")
-	var err error
-	var rowsRows interface {
-		Next() bool
-		Scan(dest ...any) error
-		Close()
+	eventType := strings.TrimSpace(c.Query("event_type"))
+	actorID := strings.TrimSpace(c.Query("actor_id"))
+	issueID := strings.TrimSpace(c.Query("issue_id"))
+
+	sql := `
+		SELECT id, issue_id, actor_id, event_type, payload, created_at
+		FROM activity_log
+		WHERE project_id=$1
+	`
+	args := []any{projectID}
+	argIdx := 2
+	if cursor != "" {
+		sql += " AND id < $" + itoa(argIdx)
+		args = append(args, cursor)
+		argIdx++
 	}
-	if cursor == "" {
-		rowsRows, err = h.db.Query(c, `
-			SELECT id, issue_id, actor_id, event_type, payload, created_at
-			FROM activity_log WHERE project_id=$1 ORDER BY id DESC LIMIT $2
-		`, projectID, limit)
-	} else {
-		rowsRows, err = h.db.Query(c, `
-			SELECT id, issue_id, actor_id, event_type, payload, created_at
-			FROM activity_log WHERE project_id=$1 AND id < $2 ORDER BY id DESC LIMIT $3
-		`, projectID, cursor, limit)
+	if eventType != "" {
+		sql += " AND lower(event_type)=lower($" + itoa(argIdx) + ")"
+		args = append(args, eventType)
+		argIdx++
 	}
+	if actorID != "" {
+		sql += " AND actor_id=$" + itoa(argIdx)
+		args = append(args, actorID)
+		argIdx++
+	}
+	if issueID != "" {
+		sql += " AND issue_id=$" + itoa(argIdx)
+		args = append(args, issueID)
+		argIdx++
+	}
+	sql += " ORDER BY id DESC LIMIT $" + itoa(argIdx)
+	args = append(args, limit)
+
+	rows, err := h.db.Query(c, sql, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "activity query failed"})
 		return
 	}
-	defer rowsRows.Close()
+	defer rows.Close()
 	events := []gin.H{}
 	var nextCursor int64
-	for rowsRows.Next() {
+	for rows.Next() {
 		var id int64
 		var issueID, actorID *string
 		var typ string
 		var payload []byte
 		var createdAt any
-		_ = rowsRows.Scan(&id, &issueID, &actorID, &typ, &payload, &createdAt)
+		_ = rows.Scan(&id, &issueID, &actorID, &typ, &payload, &createdAt)
 		nextCursor = id
 		events = append(events, gin.H{
 			"id":         id,
@@ -93,6 +121,20 @@ func (h *Handler) Activity(c *gin.Context) {
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{"events": events, "next_cursor": nextCursor})
+}
+
+func itoa(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	buf := [20]byte{}
+	i := len(buf)
+	for n > 0 {
+		i--
+		buf[i] = byte('0' + n%10)
+		n /= 10
+	}
+	return string(buf[i:])
 }
 
 func jsonRaw(b []byte) any {
