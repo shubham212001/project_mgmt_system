@@ -47,6 +47,22 @@ func (h *Handler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
+	if err := validateOptionalUUID("assignee_id", req.AssigneeID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validateOptionalUUID("reporter_id", req.ReporterID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validateOptionalUUID("parent_id", req.ParentID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validateOptionalUUID("sprint_id", req.SprintID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	issueID := uuid.NewString()
 	var key string
 	if err := h.db.QueryRow(c, `SELECT key FROM projects WHERE id=$1`, projectID).Scan(&key); err != nil {
@@ -98,6 +114,18 @@ func (h *Handler) Patch(c *gin.Context) {
 	var req patchIssueRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Version <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "version is required"})
+		return
+	}
+	if err := validateOptionalUUID("assignee_id", req.AssigneeID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validateOptionalUUID("sprint_id", req.SprintID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validateOptionalUUID("actor_id", req.ActorID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	tx, err := h.db.Begin(c)
@@ -483,5 +511,15 @@ func itoa(n int) string {
 		n /= 10
 	}
 	return string(buf[i:])
+}
+
+func validateOptionalUUID(field string, v *string) error {
+	if v == nil || strings.TrimSpace(*v) == "" {
+		return nil
+	}
+	if _, err := uuid.Parse(*v); err != nil {
+		return fmt.Errorf("%s must be a valid UUID", field)
+	}
+	return nil
 }
 
