@@ -116,17 +116,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"story\",\n  \"title\": \"Add OAuth login\",\n  \"description\": \"Implement Google OAuth\",\n  \"priority\": 2,\n  \"story_points\": 5,\n  \"assignee_id\": null,\n  \"reporter_id\": \"{{userId}}\",\n  \"parent_id\": null,\n  \"sprint_id\": null,\n  \"labels\": [\"auth\", \"backend\"],\n  \"custom_fields\": {}\n}"
+              "raw": "{\n  \"type\": \"story\",\n  \"title\": \"Add OAuth login\",\n  \"description\": \"Implement Google OAuth\",\n  \"priority\": 2,\n  \"story_points\": 5,\n  \"assignee_id\": null,\n  \"reporter_id\": \"11111111-1111-1111-1111-111111111111\",\n  \"parent_id\": null,\n  \"sprint_id\": null,\n  \"labels\": [\"auth\", \"backend\"],\n  \"custom_fields\": {}\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/{{projectId}}/issues",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/issues",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "projects",
-                "{{projectId}}",
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
                 "issues"
               ]
             }
@@ -157,17 +157,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"version\": 1,\n  \"title\": \"Add OAuth login flow\",\n  \"priority\": 1,\n  \"story_points\": 8,\n  \"assignee_id\": \"{{userId}}\",\n  \"labels\": [\"auth\", \"api\"],\n  \"sprint_id\": null,\n  \"custom_fields\": {},\n  \"actor_id\": \"{{userId}}\"\n}"
+              "raw": "{\n  \"version\": 1,\n  \"title\": \"Add OAuth login flow\",\n  \"priority\": 1,\n  \"story_points\": 8,\n  \"assignee_id\": \"11111111-1111-1111-1111-111111111111\",\n  \"labels\": [\"auth\", \"api\"],\n  \"sprint_id\": null,\n  \"custom_fields\": {},\n  \"actor_id\": \"11111111-1111-1111-1111-111111111111\"\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/{{issueId}}",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "issues",
-                "{{issueId}}"
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
               ]
             }
           }
@@ -184,17 +184,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"to_status\": \"In Review\",\n  \"actor_id\": \"{{userId}}\"\n}"
+              "raw": "{\n  \"to_status\": \"In Review\",\n  \"actor_id\": \"11111111-1111-1111-1111-111111111111\"\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/{{issueId}}/transitions",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/transitions",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "issues",
-                "{{issueId}}",
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                 "transitions"
               ]
             }
@@ -206,14 +206,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/{{issueId}}/comments",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/comments",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "issues",
-                "{{issueId}}",
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                 "comments"
               ]
             }
@@ -231,17 +231,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"content\": \"Please review this @jane\",\n  \"parent_id\": null\n}"
+              "raw": "{\n  \"user_id\": \"11111111-1111-1111-1111-111111111111\",\n  \"content\": \"Please review this @jane\",\n  \"parent_id\": null\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/{{issueId}}/comments",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/comments",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "issues",
-                "{{issueId}}",
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                 "comments"
               ]
             }
@@ -272,19 +272,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"content\": \"Edited comment content\"\n}"
+              "raw": "{\n  \"user_id\": \"11111111-1111-1111-1111-111111111111\",\n  \"content\": \"Edited comment content\"\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/{{issueId}}/comments/{{commentId}}",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/comments/abababab-abab-abab-abab-abababababab",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "issues",
-                "{{issueId}}",
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                 "comments",
-                "{{commentId}}"
+                "abababab-abab-abab-abab-abababababab"
               ]
             }
           }
@@ -301,19 +301,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{userId}}\"\n}"
+              "raw": "{\n  \"user_id\": \"11111111-1111-1111-1111-111111111111\"\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/{{issueId}}/comments/{{commentId}}",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/comments/abababab-abab-abab-abab-abababababab",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "issues",
-                "{{issueId}}",
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                 "comments",
-                "{{commentId}}"
+                "abababab-abab-abab-abab-abababababab"
               ]
             }
           }
@@ -324,20 +324,20 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/{{issueId}}/watch?user_id={{userId}}",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/watch?user_id=11111111-1111-1111-1111-111111111111",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "issues",
-                "{{issueId}}",
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                 "watch"
               ],
               "query": [
                 {
                   "key": "user_id",
-                  "value": "{{userId}}"
+                  "value": "11111111-1111-1111-1111-111111111111"
                 }
               ]
             }
@@ -349,20 +349,20 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/{{issueId}}/watch?user_id={{userId}}",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/issues/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/watch?user_id=11111111-1111-1111-1111-111111111111",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "issues",
-                "{{issueId}}",
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                 "watch"
               ],
               "query": [
                 {
                   "key": "user_id",
-                  "value": "{{userId}}"
+                  "value": "11111111-1111-1111-1111-111111111111"
                 }
               ]
             }
@@ -379,14 +379,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/{{projectId}}/board",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/board",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "projects",
-                "{{projectId}}",
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
                 "board"
               ]
             }
@@ -398,20 +398,20 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/{{projectId}}/activity?cursor={{activityCursor}}&event_type=issue_updated&actor_id={{userId}}&issue_id={{issueId}}&limit=50",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/activity?cursor=0&event_type=issue_updated&actor_id=11111111-1111-1111-1111-111111111111&issue_id=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb&limit=50",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "projects",
-                "{{projectId}}",
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
                 "activity"
               ],
               "query": [
                 {
                   "key": "cursor",
-                  "value": "{{activityCursor}}"
+                  "value": "0"
                 },
                 {
                   "key": "event_type",
@@ -419,11 +419,11 @@
                 },
                 {
                   "key": "actor_id",
-                  "value": "{{userId}}"
+                  "value": "11111111-1111-1111-1111-111111111111"
                 },
                 {
                   "key": "issue_id",
-                  "value": "{{issueId}}"
+                  "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
                 },
                 {
                   "key": "limit",
@@ -444,14 +444,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/{{projectId}}/sprints",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/sprints",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "projects",
-                "{{projectId}}",
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
                 "sprints"
               ]
             }
@@ -472,14 +472,14 @@
               "raw": "{\n  \"name\": \"Sprint 14\",\n  \"start_date\": \"2026-04-01\",\n  \"end_date\": \"2026-04-14\"\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/{{projectId}}/sprints",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/projects/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/sprints",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "projects",
-                "{{projectId}}",
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
                 "sprints"
               ]
             }
@@ -513,14 +513,14 @@
               "raw": "{\n  \"name\": \"Sprint 14 Updated\",\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/{{sprintId}}",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/cccccccc-cccc-cccc-cccc-cccccccccccc",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "sprints",
-                "{{sprintId}}"
+                "cccccccc-cccc-cccc-cccc-cccccccccccc"
               ]
             }
           }
@@ -531,14 +531,14 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/{{sprintId}}",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/cccccccc-cccc-cccc-cccc-cccccccccccc",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "sprints",
-                "{{sprintId}}"
+                "cccccccc-cccc-cccc-cccc-cccccccccccc"
               ]
             }
           }
@@ -549,14 +549,14 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/{{sprintId}}/start",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/cccccccc-cccc-cccc-cccc-cccccccccccc/start",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "sprints",
-                "{{sprintId}}",
+                "cccccccc-cccc-cccc-cccc-cccccccccccc",
                 "start"
               ]
             }
@@ -574,17 +574,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"new_sprint_id\": \"{{sprintId}}\",\n  \"carry_over_issue_ids\": [\"{{issueId}}\"]\n}"
+              "raw": "{\n  \"new_sprint_id\": \"cccccccc-cccc-cccc-cccc-cccccccccccc\",\n  \"carry_over_issue_ids\": [\"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\"]\n}"
             },
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/{{sprintId}}/complete",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/cccccccc-cccc-cccc-cccc-cccccccccccc/complete",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "sprints",
-                "{{sprintId}}",
+                "cccccccc-cccc-cccc-cccc-cccccccccccc",
                 "complete"
               ]
             }
@@ -602,7 +602,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"issue_id\": \"{{issueId}}\",\n  \"sprint_id\": \"{{sprintId}}\"\n}"
+              "raw": "{\n  \"issue_id\": \"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\",\n  \"sprint_id\": \"cccccccc-cccc-cccc-cccc-cccccccccccc\"\n}"
             },
             "url": {
               "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/sprints/issues/move",
@@ -669,7 +669,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/notifications?user_id={{userId}}",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/notifications?user_id=11111111-1111-1111-1111-111111111111",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
@@ -680,7 +680,7 @@
               "query": [
                 {
                   "key": "user_id",
-                  "value": "{{userId}}"
+                  "value": "11111111-1111-1111-1111-111111111111"
                 }
               ]
             }
@@ -706,14 +706,14 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/notifications/{{notificationId}}/read",
+              "raw": "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/api/notifications/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/read",
               "host": [
                 "https://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "api",
                 "notifications",
-                "{{notificationId}}",
+                "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
                 "read"
               ]
             }
@@ -731,23 +731,23 @@
             "header": [],
             "description": "Open this URL in a WebSocket client and keep it connected while firing REST calls from other tabs/requests.",
             "url": {
-              "raw": "wss://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/ws/projects/{{projectId}}?user_id={{userId}}&since={{sinceEventId}}",
+              "raw": "wss://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/ws/projects/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa?user_id=11111111-1111-1111-1111-111111111111&since=0",
               "host": [
                 "wss://projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app"
               ],
               "path": [
                 "ws",
                 "projects",
-                "{{projectId}}"
+                "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
               ],
               "query": [
                 {
                   "key": "user_id",
-                  "value": "{{userId}}"
+                  "value": "11111111-1111-1111-1111-111111111111"
                 },
                 {
                   "key": "since",
-                  "value": "{{sinceEventId}}"
+                  "value": "0"
                 }
               ]
             }

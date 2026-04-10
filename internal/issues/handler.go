@@ -361,7 +361,14 @@ func (h *Handler) AddComment(c *gin.Context) {
 		return
 	}
 	h.logActivity(c, projectID, issueID, &req.UserID, "comment_added", gin.H{"comment_id": commentID})
-	h.createMentionNotifications(c, projectID, issueID, req.Content)
+	if err := h.createMentionNotifications(c, projectID, issueID, req.Content); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "mention notification failed"})
+		return
+	}
+	if err := h.createCommentNotifications(c, projectID, issueID, req.UserID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "comment notification failed"})
+		return
+	}
 	_ = h.hub.Publish(c, projectID, "comment_added", gin.H{"issue_id": issueID, "comment_id": commentID})
 	c.JSON(http.StatusCreated, gin.H{"comment_id": commentID})
 }
@@ -391,7 +398,14 @@ func (h *Handler) UpdateComment(c *gin.Context) {
 	var projectID string
 	_ = h.db.QueryRow(c, `SELECT project_id FROM issues WHERE id=$1`, issueID).Scan(&projectID)
 	h.logActivity(c, projectID, issueID, &req.UserID, "comment_updated", gin.H{"comment_id": commentID})
-	h.createMentionNotifications(c, projectID, issueID, req.Content)
+	if err := h.createMentionNotifications(c, projectID, issueID, req.Content); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "mention notification failed"})
+		return
+	}
+	if err := h.createCommentNotifications(c, projectID, issueID, req.UserID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "comment notification failed"})
+		return
+	}
 	_ = h.hub.Publish(c, projectID, "comment_updated", gin.H{"issue_id": issueID, "comment_id": commentID})
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }
@@ -458,18 +472,57 @@ func (h *Handler) Unwatch(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "unwatched"})
 }
 
-func (h *Handler) createMentionNotifications(ctx context.Context, projectID, issueID, text string) {
+func (h *Handler) createMentionNotifications(ctx context.Context, projectID, issueID, text string) error {
 	mentions := parseMentions(text)
 	if len(mentions) == 0 {
-		return
+		return nil
 	}
 	for _, m := range mentions {
-		_, _ = h.db.Exec(ctx, `
+		if _, err := h.db.Exec(ctx, `
 			INSERT INTO notifications(user_id, project_id, issue_id, type, payload)
 			SELECT id, $1, $2, 'mention', jsonb_build_object('mention', $3)
 			FROM users WHERE lower(split_part(email,'@',1))=lower($3)
-		`, projectID, issueID, m)
+		`, projectID, issueID, m); err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func (h *Handler) createCommentNotifications(ctx context.Context, projectID, issueID, authorID string) error {
+	recipients := map[string]struct{}{}
+	var assigneeID *string
+	if err := h.db.QueryRow(ctx, `SELECT assignee_id FROM issues WHERE id=$1`, issueID).Scan(&assigneeID); err == nil {
+		if assigneeID != nil && *assigneeID != "" && *assigneeID != authorID {
+			recipients[*assigneeID] = struct{}{}
+		}
+	}
+	rows, err := h.db.Query(ctx, `SELECT user_id FROM issue_watchers WHERE issue_id=$1`, issueID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var uid string
+		if err := rows.Scan(&uid); err != nil {
+			return err
+		}
+		if uid != "" && uid != authorID {
+			recipients[uid] = struct{}{}
+		}
+	}
+	if len(recipients) == 0 {
+		return nil
+	}
+	for uid := range recipients {
+		if _, err := h.db.Exec(ctx, `
+			INSERT INTO notifications(user_id, project_id, issue_id, type, payload)
+			VALUES($1,$2,$3,'comment_added',jsonb_build_object('issue_id',$3,'reason','comment_activity'))
+		`, uid, projectID, issueID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (h *Handler) createNotification(ctx context.Context, userID, projectID string, issueID *string, typ string, payload any) {
