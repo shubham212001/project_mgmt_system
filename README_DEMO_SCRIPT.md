@@ -28,16 +28,19 @@ Seeded IDs:
 - **Not NoSQL-first**: workflow + joins + constraints are central; SQL model fits naturally and safely.
 
 ### 1.3 Why Redis + WebSocket (chosen) vs polling-only
+
+Used for low-latency real-time updates and reconnect-safe event replay across users/instances
+
 - **Chosen**: Redis pub/sub + replay list + WebSocket push.
 - **Why**: low-latency realtime fan-out and reconnect replay (`since`), reduced DB polling load.
 - **Not polling-only**: higher latency and higher database pressure.
 
-### 1.4 Why optimistic locking (chosen) vs last-write-wins
+### 1.4 For concurrent edits Why optimistic locking (chosen) on updates vs last-write-wins
 - **Chosen**: versioned optimistic locking on issues.
 - **Why**: prevents silent overwrite in concurrent edits; explicit `409` conflict.
 - **Not blind last-write-wins**: can lose user changes silently.
 
-### 1.5 Why cursor pagination (chosen) vs offset pagination
+### 1.5 stable pagination on feeds/search where new data keeps arriving,  Why cursor pagination (chosen) vs offset pagination
 - **Chosen**: cursor style for activity/search.
 - **Why**: stable under frequent writes, better scalability for streams.
 - **Not offset-only**: unstable page contents when new rows are inserted.
