@@ -1,7 +1,8 @@
 INSERT INTO users (id, email, display_name)
 VALUES
   ('11111111-1111-1111-1111-111111111111', 'jane@acme.dev', 'Jane Smith'),
-  ('22222222-2222-2222-2222-222222222222', 'bob@acme.dev', 'Bob Chen')
+  ('22222222-2222-2222-2222-222222222222', 'bob@acme.dev', 'Bob Chen'),
+  ('33333333-3333-3333-3333-333333333333', 'alice@acme.dev', 'Alice Johnson')
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO projects (id, name, key)
