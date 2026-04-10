@@ -517,7 +517,7 @@ func (h *Handler) createCommentNotifications(ctx context.Context, projectID, iss
 	for uid := range recipients {
 		if _, err := h.db.Exec(ctx, `
 			INSERT INTO notifications(user_id, project_id, issue_id, type, payload)
-			VALUES($1,$2,$3,'comment_added',jsonb_build_object('issue_id',$3,'reason','comment_activity'))
+			VALUES($1,$2,$3::uuid,'comment_added',jsonb_build_object('issue_id',$3::text,'reason','comment_activity'))
 		`, uid, projectID, issueID); err != nil {
 			return err
 		}
