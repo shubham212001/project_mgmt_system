@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: Jira-like backend APIs (issues, sprints, workflow, comments, realtime).
 servers:
-  - url: projectmgmtsystem-production-shubhamswiggyassesment.up.railway.app/8080
+  - url: /
 paths:
   /healthz:
     get:
