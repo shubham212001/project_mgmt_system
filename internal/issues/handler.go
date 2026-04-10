@@ -480,8 +480,8 @@ func (h *Handler) createMentionNotifications(ctx context.Context, projectID, iss
 	for _, m := range mentions {
 		if _, err := h.db.Exec(ctx, `
 			INSERT INTO notifications(user_id, project_id, issue_id, type, payload)
-			SELECT id, $1, $2, 'mention', jsonb_build_object('mention', $3)
-			FROM users WHERE lower(split_part(email,'@',1))=lower($3)
+			SELECT id, $1, $2, 'mention', jsonb_build_object('mention', $3::text)
+			FROM users WHERE lower(split_part(email,'@',1))=lower($3::text)
 		`, projectID, issueID, m); err != nil {
 			return err
 		}
