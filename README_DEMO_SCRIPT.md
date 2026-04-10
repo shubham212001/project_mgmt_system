@@ -15,6 +15,102 @@ Seeded IDs:
 
 ---
 
+
+This is a backend server for a Jira-like project management tool.
+
+In simple words: it lets a team create a project, break work into issues (tasks/stories/bugs), plan work into sprints, move issues across workflow columns (To Do → In Progress → In Review → Done), collaborate via comments, and stay updated via notifications and real-time updates.
+
+# Core Work Tracking
+Project Functionalities Supported
+
+Core Project & Issue Management
+Create issues inside a project
+Support issue types: epic, story, task, bug, sub-task
+Maintain issue hierarchy via parent_id (Epic -> Story -> Sub-task style)
+Track priority, story points, labels, assignee, reporter
+Board view grouped by project statuses
+
+Workflow Engine
+Configurable statuses per project (for example: To Do -> In Progress -> In Review -> Done)
+Configurable allowed transitions between statuses
+Transition API enforces workflow rules
+Validation hooks on transitions (for example, guard checks before moving to Done)
+Clear 422 response for invalid transitions with allowed transition list
+
+
+Concurrency Control
+Optimistic locking on issue updates using version
+Conflict detection with 409 when stale version is submitted
+Prevents silent overwrite during concurrent edits
+
+
+Sprint Management
+Sprint CRUD (create, list, update, delete)
+Start sprint and complete sprint lifecycle endpoints
+Move issues between backlog and sprint
+Sprint completion returns:
+completed velocity points
+incomplete items
+Selective issue carry-over support to another sprint
+
+
+Collaboration APIs
+Threaded comments on issues (parent_id)
+Comment CRUD: add, list, update, delete
+@mention parsing from comment text
+Watch/unwatch issue support for users
+
+
+Notification System
+List notifications for a user
+Mark notification as read
+Notification generation for:
+mentions
+assignment changes
+status changes
+review-needed flow (In Review path)
+
+
+Activity / Audit Trail
+Activity log for key project and issue mutations
+Project activity feed endpoint
+Cursor-based pagination for activity feed
+Filter support on activity feed (event_type, actor_id, issue_id, limit)
+
+
+Real-Time Sync (WebSocket)
+Project-level WebSocket endpoint
+Live event broadcast for board/issue/sprint/comment changes
+Event types include:
+issue_created
+issue_updated
+issue_moved
+comment_added
+comment_updated
+comment_deleted
+sprint_updated
+presence
+Presence tracking (project/board-level connected users)
+Reconnect support with missed-event replay using since
+
+
+Search & Filtering
+Full-text search across issue title/description and comments
+Structured filters (status, assignee, minimum priority)
+Cursor-style pagination for search results
+Indexed query paths for better performance
+
+
+Platform / Operational Features
+Health endpoint (/healthz)
+OpenAPI spec endpoint (/openapi.yaml)
+Swagger UI endpoint (/swagger)
+Auto-run migrations at startup
+Seed data for quick demo bootstrap
+Dockerized local environment (Dockerfile, docker-compose.yml)
+Hosted deployment support (Railway/Render/Fly compatible)
+
+
 ## 1) Architecture First (What to say)
 
 ### 1.1 Why modular monolith (chosen) vs microservices
@@ -35,6 +131,15 @@ Used for low-latency real-time updates and reconnect-safe event replay across us
 - **Why**: low-latency realtime fan-out and reconnect replay (`since`), reduced DB polling load.
 - **Not polling-only**: higher latency and higher database pressure.
 
+
+For real-time collaboration, I’m using WebSocket and Redis together because they solve different parts of the problem.”
+“WebSocket is the live connection to the browser, so updates can be pushed instantly instead of waiting for refresh or polling.”
+“Redis is my backend event backbone: I use pub/sub to fan out events quickly and a short replay buffer so reconnecting clients can catch up on missed events.”
+“I chose this combination for low latency, better scalability, and reliable reconnect behavior.”
+“WebSocket alone is not enough in multi-instance deployments, because events from one instance may not reach clients connected to another instance.”
+“Redis alone is also not enough, because it can distribute events inside the backend, but it is not the direct client delivery channel.
+
+
 ### 1.4 For concurrent edits Why optimistic locking (chosen) on updates vs last-write-wins
 - **Chosen**: versioned optimistic locking on issues.
 - **Why**: prevents silent overwrite in concurrent edits; explicit `409` conflict.
@@ -52,12 +157,12 @@ Used for low-latency real-time updates and reconnect-safe event replay across us
 ## 0:00 - 1:30 Intro + Architecture
 Say architecture decisions from section 1.
 
-Show:
+<!-- Show:
 - `README.md` architecture section
 - `internal/api/router.go`
 - `cmd/server/main.go`
 - `internal/realtime/hub.go`
-- `internal/platform/migrations/sql/001_schema.sql`
+- `internal/platform/migrations/sql/001_schema.sql` -->
 
 ## 1:30 - 2:00 Health + docs
 ```bash
